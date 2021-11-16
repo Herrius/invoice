@@ -1,5 +1,5 @@
 <?php
-
+#prueba de de cambio
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductStoreRequest;
