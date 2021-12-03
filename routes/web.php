@@ -4,6 +4,7 @@ use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceDetailController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PublicController;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Route;
 
@@ -19,9 +20,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+ 
+// });
+Route::get('/',[PublicController::class,'index']);
+Route::post('/',[PublicController::class,'show_product'])->name('consulta');
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
