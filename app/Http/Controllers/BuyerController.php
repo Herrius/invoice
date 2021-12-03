@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Requests\BuyerStoreRequest;
 use App\Models\Buyer;
 use Illuminate\Http\Request;
 
@@ -12,9 +12,11 @@ class BuyerController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+   
     public function index()
     {
-        //
+        $buyers = Buyer::paginate(10);
+        return view('buyers.index', compact('buyers'));
     }
 
     /**
@@ -24,7 +26,8 @@ class BuyerController extends Controller
      */
     public function create()
     {
-        //
+        $buyer = new Buyer();
+        return view('buyers.create', compact('buyer'));
     }
 
     /**
@@ -33,9 +36,10 @@ class BuyerController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(BuyerStoreRequest $request)
     {
-        //
+        Buyer::create($request->validated());
+        return redirect()->route('buyers.index')->with(['status' => 'Success', 'color' => 'green', 'message' => 'Buyer created successfully']);
     }
 
     /**
@@ -57,7 +61,7 @@ class BuyerController extends Controller
      */
     public function edit(Buyer $buyer)
     {
-        //
+        return view('buyers.create', compact('buyer'));
     }
 
     /**
@@ -67,9 +71,11 @@ class BuyerController extends Controller
      * @param  \App\Models\Buyer  $buyer
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Buyer $buyer)
+    public function update(BuyerStoreRequest $request, Buyer $buyer)
     {
-        //
+        $buyer->fill($request->validated());
+        $buyer->save();
+        return redirect()->route('buyers.index')->with(['status' => 'Success', 'color' => 'blue', 'message' => 'Product updated successfully']);
     }
 
     /**
@@ -80,6 +86,13 @@ class BuyerController extends Controller
      */
     public function destroy(Buyer $buyer)
     {
-        //
+        try {
+            $buyer->delete();
+            $result = ['status' => 'success', 'color' => 'green', 'message' => 'Deleted successfully'];
+        } catch (\Exception $e) {
+            $result = ['status' => 'error', 'color' => 'red', 'message' => 'Buyer cannot be delete'];
+        }
+
+        return redirect()->route('buyers.index')->with($result);
     }
 }

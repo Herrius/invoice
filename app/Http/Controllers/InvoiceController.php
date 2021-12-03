@@ -2,8 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InvoiceStoreRequest;
+use App\Mail\InvoiceEmail;
+use App\Models\Buyer;
 use App\Models\Invoice;
+use App\Models\InvoiceDetail;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class InvoiceController extends Controller
 {
@@ -14,7 +20,8 @@ class InvoiceController extends Controller
      */
     public function index()
     {
-        //
+        $invoices = Invoice::with('buyer')->paginate(3);
+        return view('invoices.index', compact('invoices'));
     }
 
     /**
@@ -24,7 +31,9 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-        //
+        $invoice = new Invoice();
+        $buyers = Buyer::all();
+        return view('invoices.create', compact('invoice', 'buyers'));
     }
 
     /**
@@ -33,9 +42,10 @@ class InvoiceController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(InvoiceStoreRequest $request)
     {
-        //
+        $invoice = Invoice::create($request->validated());
+        return redirect()->route('invoices.add_products', ["invoice" => $invoice->id])->with(['status' => 'Success', 'color' => 'green', 'message' => 'Item added successfully']);
     }
 
     /**
@@ -44,10 +54,7 @@ class InvoiceController extends Controller
      * @param  \App\Models\Invoice  $invoice
      * @return \Illuminate\Http\Response
      */
-    public function show(Invoice $invoice)
-    {
-        //
-    }
+  
 
     /**
      * Show the form for editing the specified resource.
@@ -57,7 +64,8 @@ class InvoiceController extends Controller
      */
     public function edit(Invoice $invoice)
     {
-        //
+        $buyers = Buyer::all();
+        return view('invoices.create', compact('invoice','buyers'));
     }
 
     /**
@@ -69,7 +77,9 @@ class InvoiceController extends Controller
      */
     public function update(Request $request, Invoice $invoice)
     {
-        //
+        $invoice->fill($request->validated());
+        $invoice->save();
+        return redirect()->route('invoices.index')->with(['status' => 'Success', 'color' => 'blue', 'message' => 'Product updated successfully']);
     }
 
     /**
@@ -80,6 +90,30 @@ class InvoiceController extends Controller
      */
     public function destroy(Invoice $invoice)
     {
-        //
+        try {
+            $invoice->delete();
+            $result = ['status' => 'success', 'color' => 'green', 'message' => 'Deleted successfully'];
+        } catch (\Exception $e) {
+            $result = ['status' => 'error', 'color' => 'red', 'message' => 'Invoice cannot be delete'];
+        }
+
+        return redirect()->route('invoices.index')->with($result);
+    }
+
+    public function completeSend(Request $request, Invoice $invoice){
+        $details=InvoiceDetail::with('product')
+            ->where('invoice_id',$invoice->id)
+            ->get();
+        try{
+            Mail::to($invoice->buyer->email)
+                ->queue(new InvoiceEmail($invoice,$details));
+            $result = ['status' => 'success', 'color' => 'green', 'message' => 'Mail sent succesfully'];
+        }catch(Exception $e){
+            $result = ['status' => 'success', 'color' => 'red', 'message' => $e->getMessage()];
+        }
+        $invoice->status='complete';
+        $invoice->save();
+
+        return redirect()->route('invoices.index')->with($result);
     }
 }

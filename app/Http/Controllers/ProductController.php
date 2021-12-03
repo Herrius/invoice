@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductStoreRequest;
 use App\Models\Product;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -103,6 +104,12 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        try{
+            $product->delete();
+            $result=['status'=>'sucess', 'color'=>'green', 'message'=>'Delete successfully'];
+        }catch(Exception $e){
+            $result=['status'=>'sucess', 'color'=>'red', 'message'=>'Product cannot be delete'];
+        }
+        return redirect()->route('products.index')->with($result);
     }
 }
